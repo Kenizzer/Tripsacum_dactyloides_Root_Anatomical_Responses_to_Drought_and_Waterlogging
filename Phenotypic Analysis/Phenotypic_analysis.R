@@ -10,9 +10,9 @@ library(emmeans)
 
 # Theme set and Color Palettes
 theme_set(theme_bw())
-treatment_palette <- c("Flood24" = "#26008E",
-                       "Flood48" = "#134B99",
-                       "Flood72" = "#0096A4",
+treatment_palette <- c("Waterlogged 24" = "#26008E",
+                       "Waterlogged 48" = "#134B99",
+                       "Waterlogged 72" = "#0096A4",
                        "Control" = "#5CB270",
                        "Drought" = "#DAA520")
 
