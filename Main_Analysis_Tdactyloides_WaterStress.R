@@ -19,7 +19,7 @@ treatment_palette <- c("Waterlogged 24" = "#26008E",
 
 
 #### 1) Load data and calculate derived areas and percentages ####
-section_data <- read_xlsx("Section_data_plus_meta.xlsx", sheet = 1)
+section_data <- read_xlsx("Section_data_plus_metadata.xlsx", sheet = 1)
 # Convert couple of columns with NAs to numeric and segment to factor
 numeric <- section_data %>% select(`Root Perimeter`:`Root Hair Number`) %>% mutate_if(is.character, as.numeric)
 meta <- section_data %>% select(Plant_id:`Image Name`)
@@ -53,6 +53,33 @@ section_data$`Root Hair Number` <- section_data$`Root Hair Number` / (section_da
 # Sanity check
 str(section_data)
 
+### Diameter range of roots ###
+section_data$root_diameter <- (sqrt(section_data$`Root Area` / pi) * 2)
+
+diameter_df <- section_data %>%
+  select(root_diameter, Plant_id, Treatment) %>%
+  group_by(Plant_id, Treatment) %>%
+  summarize(mean_diameter_mm = (mean(root_diameter, na.rm = TRUE)/1000),
+            count = n())
+
+ggplot(diameter_df, aes(x = Treatment, y = mean_diameter_mm, fill = Treatment)) +
+  geom_jitter(width = 0.2) +
+  geom_boxplot(alpha = 0.8, outlier.colour = NA, color = "black") +
+  scale_fill_manual(name = "Treatment", values = treatment_palette) +
+  ylab("Root Diameter (mm)") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+x <- section_data %>%
+  select(root_diameter, Plant_id, Treatment) %>%
+  group_by(Plant_id) %>%
+  summarize(mean_diameter_mm = (mean(root_diameter, na.rm = TRUE)/1000),
+            count = n())
+
+# mean and standard error
+summary(x$mean_diameter_mm)
+sd(x$mean_diameter_mm) / sqrt(length(x$mean_diameter_mm))
 
 #### 2) Check the variance between sections of the same segment of root ####
 # Select all plants that have three sections per segment (i.e, have a replicate A, B, and C)
@@ -63,109 +90,92 @@ rm(section_data_index)
 # Calculate coefficient of variation by Replicate, Segment, and Plant ID.
 cv <- function(x, na.rm = FALSE) (sd(x, na.rm = na.rm)/mean(x, na.rm = na.rm))*100
 
-#  CV for Replicate
-CVs <- section_data_replicated %>%
+#CV for Replicate
+CVs_replicate  <- section_data_replicated %>%
   select(Plant_id, Segment, Replicate, Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  group_by(Plant_id, Segment, Treatment) %>%
-  mutate(across(`Root Area`:`Stele:Root Ratio`, cv)) %>%
-  ungroup() 
+  gather(Traits, value, -Plant_id, -Segment, -Replicate, -Treatment) %>%
+  group_by(Plant_id, Segment, Treatment, Traits) %>%
+  summarize(cv = cv(value), n=n()) %>%
+  ungroup() %>%
+  group_by(Treatment, Traits) %>%
+  summarize(CVmean = round(mean(cv, na.rm=T), 0), n=n())
 
-Rep_CV_table <- CVs %>%
-  group_by(Treatment) %>%
-  select(Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  filter_all(all_vars(!is.infinite(.))) %>%
-  summarise_all(mean, na.rm = TRUE) %>%
-  pivot_longer(names_to = "Traits", values_to = "CV", -Treatment) %>%
-  mutate(across(where(is.numeric), round, 0))
+summary(CVs_replicate$n)
 
-# Segment CV
-rep_means <- section_data_replicated %>%
+#CV for Segment
+CVs_segment  <- section_data_replicated %>%
   select(Plant_id, Segment, Replicate, Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  group_by(Plant_id, Segment, Treatment) %>%
-  summarise(across(`Root Area`:`Stele:Root Ratio`, mean)) %>%
-  ungroup() 
+  gather(Traits, value, -Plant_id, -Segment, -Replicate, -Treatment) %>%
+  group_by(Plant_id, Replicate, Treatment, Traits) %>%
+  summarize(cv = cv(value), n=n()) %>%
+  ungroup() %>%
+  group_by(Treatment, Traits) %>%
+  summarize(CVmean = round(mean(cv, na.rm=T), 0), n=n())
 
-CVs <- rep_means %>%
-  select(Plant_id, Segment, Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  group_by(Plant_id, Treatment) %>%
-  mutate(across(`Root Area`:`Stele:Root Ratio`, cv)) %>%
-  ungroup() 
+summary(CVs_segment$n)
 
-Seg_CV_table <- CVs %>%
-  group_by(Treatment) %>%
-  select(Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  filter_all(all_vars(!is.infinite(.))) %>%
-  summarise_all(mean, na.rm = TRUE) %>%
-  pivot_longer(names_to = "Traits", values_to = "CV", -Treatment) %>%
-  mutate(across(where(is.numeric), round, 0))
-
-# Plant ID CV
-rep_means <- section_data_replicated %>%
+#CV for Plant ID
+CVs_plantid  <- section_data_replicated %>%
   select(Plant_id, Segment, Replicate, Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  group_by(Plant_id, Segment, Treatment) %>%
-  summarise(across(`Root Area`:`Stele:Root Ratio`, mean)) %>%
-  ungroup() 
+  gather(Traits, value, -Plant_id, -Segment, -Replicate, -Treatment) %>%
+  group_by(Segment, Replicate, Treatment, Traits) %>%
+  summarize(cv = cv(value), n=n()) %>%
+  ungroup() %>%
+  group_by(Treatment, Traits) %>%
+  summarize(CVmean = round(mean(cv, na.rm=T), 0), n=n())
 
-CVs <- rep_means %>%
-  select(Plant_id, Segment, Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  group_by(Treatment, Segment) %>%
-  mutate(across(`Root Area`:`Stele:Root Ratio`, cv)) %>%
-  ungroup()
-
-PID_CV_table <- CVs %>%
-  group_by(Treatment) %>%
-  select(Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  filter_all(all_vars(!is.infinite(.))) %>%
-  summarise_all(mean, na.rm = TRUE) %>%
-  pivot_longer(names_to = "Traits", values_to = "CV", -Treatment) %>%
-  mutate(across(where(is.numeric), round, 0))
+summary(CVs_plantid$n)
 
 # Reorder factor levels to be more sensible
 # Root surface > Cortex > Stele > Metaxylem Vessels
-# Table 1
-Rep_CV_table$Traits <- factor(Rep_CV_table$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
-                                                              "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
-                                                              "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
-                                                              "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
-Rep_CV_table <- Rep_CV_table[!is.na(Rep_CV_table$Traits), ]
-# Table 2
-Seg_CV_table$Traits <- factor(Seg_CV_table$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
-                                                                  "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
-                                                                  "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
-                                                                  "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
-Seg_CV_table <- Seg_CV_table[!is.na(Seg_CV_table$Traits), ]
-# Table 3
-PID_CV_table$Traits <- factor(PID_CV_table$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
-                                                                  "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
-                                                                  "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
-                                                                  "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
-PID_CV_table <- PID_CV_table[!is.na(PID_CV_table$Traits), ]
+# Panel A
+CVs_replicate$Traits <- factor(CVs_replicate$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
+                                                                    "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
+                                                                    "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
+                                                                    "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
+CVs_replicate <- CVs_replicate[!is.na(CVs_replicate$Traits), ]
+# Panel B
+CVs_segment$Traits <- factor(CVs_segment$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
+                                                                "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
+                                                                "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
+                                                                "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
+CVs_segment <- CVs_segment[!is.na(CVs_segment$Traits), ]
+# Panel c
+CVs_plantid$Traits <- factor(CVs_plantid$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
+                                                                "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
+                                                                "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
+                                                                "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
+CVs_plantid <- CVs_plantid[!is.na(CVs_plantid$Traits), ]
+
+# Find min-max for gradient
+min(CVs_replicate$CVmean, CVs_segment$CVmean, CVs_plantid$CVmean) # 0
+max(CVs_replicate$CVmean, CVs_segment$CVmean, CVs_plantid$CVmean) # 202
 
 # Tile plots with text labels
-a <- ggplot(Rep_CV_table, aes(x = Treatment, y = Traits, fill = CV)) +
+a <- ggplot(CVs_replicate, aes(x = Treatment, y = Traits, fill = CVmean)) +
   geom_tile(color = "black") +
   coord_fixed() +
-  geom_text(aes(label = CV), color = "black", size = 4) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,177)) +
+  geom_text(aes(label = CVmean), color = "black", size = 4) +
+  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,202)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   labs(title = "Among Replicate Sections")
 
-b <- ggplot(Seg_CV_table, aes(x = Treatment, y = Traits, fill = CV)) +
+b <- ggplot(CVs_segment, aes(x = Treatment, y = Traits, fill = CVmean)) +
   geom_tile(color = "black") +
   coord_fixed() +
-  geom_text(aes(label = CV), color = "black", size = 4) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,177)) +
+  geom_text(aes(label = CVmean), color = "black", size = 4) +
+  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,202)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
         axis.title.y = element_blank(), axis.text.y = element_blank()) +
   labs(title = "Among Root Segments")
 
 
-c <- ggplot(PID_CV_table, aes(x = Treatment, y = Traits, fill = CV)) +
+c <- ggplot(CVs_plantid, aes(x = Treatment, y = Traits, fill = CVmean)) +
   geom_tile(color = "black") +
   coord_fixed() +
-  geom_text(aes(label = CV), color = "black", size = 4) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,177)) +
+  geom_text(aes(label = CVmean), color = "black", size = 4) +
+  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,202)) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
         axis.title.y = element_blank(), axis.text.y = element_blank())  +
   labs(title = "Among Plants")
@@ -174,6 +184,17 @@ CV_plots <- ggarrange(a,b,c, common.legend = TRUE, nrow = 1, legend = "right", l
 
 ggsave("figures/Figure3_CV_plots.png", CV_plots, width = 16, height = 8, units = "in")
 ggsave("figures/Figure3_CV_plots.svg", CV_plots, width = 16, height = 8, units = "in")
+
+#### Get significance of the CV mean value comparison
+All_CVs <- rbind(CVs_replicate %>% mutate(Group = "Replicate"), 
+                 CVs_segment %>% mutate(Group = "Segment"),
+                 CVs_plantid %>% mutate(Group = "PlantID"))
+
+lm_by_traits <- lm(CVmean ~ Group*Traits, data = All_CVs)
+lm_by_treatment <- lm(CVmean ~ Treatment*Group, data = All_CVs)
+
+contrast(emmeans(lm_by_traits,~Group|Traits), "trt.vs.ctrl", ref = 2)
+contrast(emmeans(lm_by_treatment,~Group|Treatment), "trt.vs.ctrl", ref = 2)
 
 #### 3) Analysis with A sections, expanded sampling ####
 # We use only single section from each of the samples that had 3 sections (labeled A,B,C) imaged to avoid
