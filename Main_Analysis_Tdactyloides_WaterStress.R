@@ -8,6 +8,7 @@ library(emmeans)
 library(ggpubr)
 library(lmerTest)
 library(viridis)
+library(scales)
 
 # Set theme
 theme_set(theme_bw())
@@ -87,114 +88,173 @@ section_data_index <- section_data %>% filter(Replicate %in% c("B", "C"))
 section_data_replicated <- section_data %>% filter(Plant_id %in% unique(section_data_index$Plant_id))
 rm(section_data_index)
 
-# Calculate coefficient of variation by Replicate, Segment, and Plant ID.
-cv <- function(x, na.rm = FALSE) (sd(x, na.rm = na.rm)/mean(x, na.rm = na.rm))*100
+##### Percent variance explained  #####
+pve_by_t <- function(trait, treatment_var = "Treatment") {
+  # Trait with back ticks
+  trait_sym <- as.name(trait)
+  # Treatment  levels
+  treatments <- unique(section_data_replicated[[treatment_var]])
+  # Initialize output list
+  output <- list()
+  
+  # Loop through treatment levels
+  for (t in treatments) {
+    # Subset data
+    data_subset <- section_data_replicated %>% filter(.data[[treatment_var]] == t)
+    # Conditional Metaxylem Vessel Number
+    formula <- if (trait == "Metaxylem Vessel Number") {
+      as.formula(bquote(.(trait_sym) ~ (1 | Plant_id)))
+    } else {
+      as.formula(bquote(.(trait_sym) ~ (1 | Plant_id) + (1 | Plant_id:Segment)))
+    }
+    # Fit model
+    model <- lmer(formula, data = data_subset)
+    
+    # Get variance components
+    var_comps <- as.data.frame(VarCorr(model))
+    total_var <- sum(var_comps$vcov)
+    var_comps$PVE <- (var_comps$vcov / total_var)
+    
+    # Tidy results
+    result <- var_comps[, c("grp", "vcov", "PVE")]
+    result$Trait <- trait
+    result$Treatment <- t
+    names(result) <- c("Group", "Variance", "Percent_Variance_Explained", "Trait", "Treatment")
+    
+    # Rename groups
+    result$Group <- dplyr::recode(result$Group,
+                                  "Residual" = "Among Replicates",
+                                  "Plant_id:Segment" = "Among Segments within Plants",
+                                  "Plant_id" = "Among Plants")
+    #loop result
+    output[[t]] <- result
+  }
+  
+  # Combine and return
+  temp <- bind_rows(output)
+  return( temp %>%
+    select(-Variance) %>%
+    pivot_longer(cols = Percent_Variance_Explained, values_to = "PVE"))
+}
 
-#CV for Replicate
-CVs_replicate  <- section_data_replicated %>%
-  select(Plant_id, Segment, Replicate, Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  gather(Traits, value, -Plant_id, -Segment, -Replicate, -Treatment) %>%
-  group_by(Plant_id, Segment, Treatment, Traits) %>%
-  summarize(cv = cv(value), n=n()) %>%
-  ungroup() %>%
-  group_by(Treatment, Traits) %>%
-  summarize(CVmean = round(mean(cv, na.rm=T), 0), n=n())
+#Modeling Strategy 
+# Variance partitioned by Sources
+# (1|Plant_id) = Among plants (regardless of segment) [All Plant_id]
+# (1|Plant_id:Segment) = Among Segments [1,2,3,4,5,6,7,8]
+# (1|Residual) = Among Replicates [A,B,C]
+PVE_df <- rbind(pve_by_t("Root Area"),
+                pve_by_t("Epidermis Depth"),
+                pve_by_t("Root Hair Number"),
+                pve_by_t("Cortex Area"),
+                pve_by_t("Cortical Cell File Number"),
+                pve_by_t("Living Cortical Percent"),
+                pve_by_t("Aerenchyma Percent"),
+                pve_by_t("Stele Area"),
+                pve_by_t("Stele:Cortex Ratio"),
+                pve_by_t("Stele:Root Ratio"),
+                pve_by_t("Metaxylem Vessel Area"),
+                pve_by_t("Metaxylem Vessel Number"),
+                pve_by_t("Metaxylem Vessel Mean Area"))
 
-summary(CVs_replicate$n)
+# There is no variance within replicates for metaxylem number
+# so the "residual term" is re-coded for that trait here
+PVE_df <- PVE_df %>%
+  mutate(Group = if_else(
+    Trait == "Metaxylem Vessel Number" & Group == "Among Replicates",
+    "Among Segments within Plants",
+    Group
+  ))
 
-#CV for Segment
-CVs_segment  <- section_data_replicated %>%
-  select(Plant_id, Segment, Replicate, Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  gather(Traits, value, -Plant_id, -Segment, -Replicate, -Treatment) %>%
-  group_by(Plant_id, Replicate, Treatment, Traits) %>%
-  summarize(cv = cv(value), n=n()) %>%
-  ungroup() %>%
-  group_by(Treatment, Traits) %>%
-  summarize(CVmean = round(mean(cv, na.rm=T), 0), n=n())
+# set factor levels for plotting
+PVE_df$Group <- factor(PVE_df$Group, levels = c("Among Replicates",
+                                                "Among Segments within Plants",
+                                                "Among Plants"))
 
-summary(CVs_segment$n)
+# Get mean PVE across traits by treatment
+mean_pve_df <- PVE_df %>%
+  group_by(Treatment, Group) %>%
+  summarise(PVE = mean(PVE), .groups = "drop") %>%
+  mutate(Trait = "Mean PVE", name = "Percent_Variance_Explained")
+PVE_df <- bind_rows(PVE_df, mean_pve_df)
 
-#CV for Plant ID
-CVs_plantid  <- section_data_replicated %>%
-  select(Plant_id, Segment, Replicate, Treatment, `Root Area`:`Stele:Root Ratio`) %>%
-  gather(Traits, value, -Plant_id, -Segment, -Replicate, -Treatment) %>%
-  group_by(Segment, Replicate, Treatment, Traits) %>%
-  summarize(cv = cv(value), n=n()) %>%
-  ungroup() %>%
-  group_by(Treatment, Traits) %>%
-  summarize(CVmean = round(mean(cv, na.rm=T), 0), n=n())
+# Factor level for plot right to left. Rename root hair number.
+PVE_df$Trait <- factor(PVE_df$Trait, levels = rev(c("Mean PVE","Root Area", "Epidermis Depth", "Root Hair Number",
+                                                    "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
+                                                    "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
+                                                    "Metaxylem Vessel Mean Area", "Metaxylem Vessel Area", "Metaxylem Vessel Number")))
+levels(PVE_df$Trait)[levels(PVE_df$Trait) == "Root Hair Number"] <- "Root Hair Density"
+# PLOTTING 
+Barplot_PVE <- ggplot(PVE_df, aes(x = Trait, y = PVE, fill = Group)) +
+  annotate("rect",xmin = 13.5, xmax = 14.5, ymin = -Inf, ymax = Inf, fill = "firebrick", alpha = 0.8) +
+  geom_bar(stat = "identity", position = "stack", color = "black", size = 0.1) +
+  facet_wrap(~ Treatment, ncol = 1) +
+  labs(y = "Percent Variance Explained", fill = "Group") +
+  scale_fill_brewer(palette = "Greys", name = "Source") +
+  scale_y_continuous(labels = percent_format(accuracy = 1), breaks = seq(0, 1, by = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6), axis.title.x = element_blank(),
+        strip.text = element_text(size = 6, margin = margin(t = 1, b = 1)), legend.position = "top",
+        legend.text = element_text(size = 6), legend.title = element_text(size = 10),
+        legend.key.height = unit(0.4, "cm"), legend.key.width = unit(0.4, "cm"),
+        plot.margin = margin(t = 1, r = 1, b = 1, l = 2),
+        legend.margin = margin(b = 0.5, t = 0.5)) +
+  guides(fill = guide_legend(nrow = 3, byrow = TRUE))
+Barplot_PVE
 
-summary(CVs_plantid$n)
+ggsave("figures/Figure3_PVE_Plot.png", Barplot_PVE, width = 3.25, height = 6, units = "in")
+ggsave("figures/Figure3_PVE_Plot.svg", Barplot_PVE, width = 3.25, height = 6, units = "in")
 
-# Reorder factor levels to be more sensible
-# Root surface > Cortex > Stele > Metaxylem Vessels
-# Panel A
-CVs_replicate$Traits <- factor(CVs_replicate$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
-                                                                    "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
-                                                                    "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
-                                                                    "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
-CVs_replicate <- CVs_replicate[!is.na(CVs_replicate$Traits), ]
-# Panel B
-CVs_segment$Traits <- factor(CVs_segment$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
-                                                                "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
-                                                                "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
-                                                                "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
-CVs_segment <- CVs_segment[!is.na(CVs_segment$Traits), ]
-# Panel c
-CVs_plantid$Traits <- factor(CVs_plantid$Traits, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
-                                                                "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
-                                                                "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
-                                                                "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
-CVs_plantid <- CVs_plantid[!is.na(CVs_plantid$Traits), ]
+# Numbers
+section_data_replicated %>%
+  distinct(Plant_id, Treatment) %>%
+  count(Treatment, name = "N_treatment") # Number plants by treatment
 
-# Find min-max for gradient
-min(CVs_replicate$CVmean, CVs_segment$CVmean, CVs_plantid$CVmean) # 0
-max(CVs_replicate$CVmean, CVs_segment$CVmean, CVs_plantid$CVmean) # 202
+section_data_replicated %>%
+  distinct(Plant_id, Treatment, Segment) %>%
+  count(Treatment, name = "N_treatment") # Number Segments by treatment
 
-# Tile plots with text labels
-a <- ggplot(CVs_replicate, aes(x = Treatment, y = Traits, fill = CVmean)) +
-  geom_tile(color = "black") +
-  coord_fixed() +
-  geom_text(aes(label = CVmean), color = "black", size = 4) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,202)) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
-  labs(title = "Among Replicate Sections")
+section_data_replicated %>%
+  distinct(Plant_id, Segment, Treatment, Replicate) %>%
+  count(Treatment, name = "N_treatment") # Number of replicates by treatment
 
-b <- ggplot(CVs_segment, aes(x = Treatment, y = Traits, fill = CVmean)) +
-  geom_tile(color = "black") +
-  coord_fixed() +
-  geom_text(aes(label = CVmean), color = "black", size = 4) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,202)) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
-        axis.title.y = element_blank(), axis.text.y = element_blank()) +
-  labs(title = "Among Root Segments")
+# Stats, dunnett comparing rep to plants/segments
+lm_by_traits <- lm(PVE ~ Group*Trait, data = PVE_df %>% filter(Trait != "Mean PVE"))
+contrast(emmeans(lm_by_traits,~Group|Trait), "trt.vs.ctrl", ref = 1)
+
+PVE_df %>%
+  filter(Trait == "Mean PVE") %>%
+  select(Group, Treatment, PVE) %>%
+  filter(Group == "Among Replicates")
+
+PVE_df %>%
+  filter(Trait == "Mean PVE") %>%
+  select(Group, Treatment, PVE) %>%
+  filter(Group == "Among Segments within Plants")
+
+PVE_df %>%
+  filter(Trait == "Mean PVE") %>%
+  select(Group, Treatment, PVE) %>%
+  filter(Group == "Among Plants")
+
+section_data_replicated %>%
+  summarize(CV = sd(`Epidermis Depth`, na.rm = TRUE) / mean(`Epidermis Depth`, na.rm = TRUE))
+section_data_replicated %>%
+  summarize(CV = sd(`Root Area`, na.rm = TRUE) / mean(`Root Area`, na.rm = TRUE))
+section_data_replicated %>%
+  summarize(CV = sd(`Metaxylem Vessel Number`, na.rm = TRUE) / mean(`Metaxylem Vessel Number`, na.rm = TRUE))
 
 
-c <- ggplot(CVs_plantid, aes(x = Treatment, y = Traits, fill = CVmean)) +
-  geom_tile(color = "black") +
-  coord_fixed() +
-  geom_text(aes(label = CVmean), color = "black", size = 4) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Coefficent of Variation (%)", limits = c(0,202)) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
-        axis.title.y = element_blank(), axis.text.y = element_blank())  +
-  labs(title = "Among Plants")
+section_data_replicated %>%
+  pivot_longer(
+    cols = where(is.numeric), # or specify trait columns directly
+    names_to = "Trait",
+    values_to = "Value"
+  ) %>%
+  group_by(Trait) %>%
+  summarize(
+    CV = sd(Value, na.rm = TRUE) / mean(Value, na.rm = TRUE)
+  ) %>%
+  arrange(desc(CV))
 
-CV_plots <- ggarrange(a,b,c, common.legend = TRUE, nrow = 1, legend = "right", labels = "AUTO", align = 'hv')
-
-ggsave("figures/Figure3_CV_plots.png", CV_plots, width = 16, height = 8, units = "in")
-ggsave("figures/Figure3_CV_plots.svg", CV_plots, width = 16, height = 8, units = "in")
-
-#### Get significance of the CV mean value comparison
-All_CVs <- rbind(CVs_replicate %>% mutate(Group = "Replicate"), 
-                 CVs_segment %>% mutate(Group = "Segment"),
-                 CVs_plantid %>% mutate(Group = "PlantID"))
-
-lm_by_traits <- lm(CVmean ~ Group*Traits, data = All_CVs)
-lm_by_treatment <- lm(CVmean ~ Treatment*Group, data = All_CVs)
-
-contrast(emmeans(lm_by_traits,~Group|Traits), "trt.vs.ctrl", ref = 2)
-contrast(emmeans(lm_by_treatment,~Group|Treatment), "trt.vs.ctrl", ref = 2)
 
 #### 3) Analysis with A sections, expanded sampling ####
 # We use only single section from each of the samples that had 3 sections (labeled A,B,C) imaged to avoid
@@ -293,10 +353,6 @@ contrast(emmeans(SR_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(MA_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(MN_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(MV_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
-
-test <- A_section_data %>%
-  filter(Treatment == "Waterlogged 48")
-
 
 # Histograms of residuals
 hist(resid(RA_mod))
@@ -424,36 +480,37 @@ a <- ggplot(Drought_DF, aes(x = Segment , y = Trait, fill = `Relative Change`)) 
   geom_tile(color = "black") +
   coord_fixed() +
   geom_text(aes(label = `Significance`), color = "black", size = 8) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
+  xlab("Root Segment (cm)") +
+  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
+  theme(axis.title.y = element_blank()) +
   labs(title = "Drought")
 
 b <- ggplot(Flood24_DF, aes(x = Segment , y = Trait, fill = `Relative Change`)) +
   geom_tile(color = "black") +
   coord_fixed() +
   geom_text(aes(label = `Significance`), color = "black", size = 8) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
-        axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  xlab("Root Segment (cm)") +
+  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
+  theme(axis.text.y = element_blank(), axis.title.y = element_blank()) +
   labs(title = "Flood 24")
 
 c <- ggplot(Flood48_DF, aes(x = Segment , y = Trait, fill = `Relative Change`)) +
   geom_tile(color = "black") +
   coord_fixed() +
   geom_text(aes(label = `Significance`), color = "black", size = 8) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
-        axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  xlab("Root Segment (cm)") +
+
+  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
+  theme(axis.text.y = element_blank(), axis.title.y = element_blank()) +
   labs(title = "Flood 48")
 
 d <- ggplot(Flood72_DF, aes(x = Segment , y = Trait, fill = `Relative Change`)) +
   geom_tile(color = "black") +
   coord_fixed() +
   geom_text(aes(label = `Significance`), color = "black", size = 8) +
-  scale_fill_gradient2(low='firebrick1', high='dodgerblue1', mid='white', name="Relative Change from Control (%)", limits = c(-40,40)) +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank(),
-        axis.title.y = element_blank(), axis.text.y = element_blank()) +
+  xlab("Root Segment (cm)") +
+  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-40,40)) +
+  theme(axis.text.y = element_blank(), axis.title.y = element_blank()) +
   labs(title = "Flood 72")
 
 #arrange and save
@@ -470,8 +527,7 @@ Cortical_file_plot <- ggplot(plot(emmeans(CF_mod,~Treatment|Segment), plotit = F
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment), size = 0.50,
                   linewidth = 1.75, fill = "white", shape = 22, position = position_dodge(width = 0.75)) +
   scale_color_manual(values = treatment_palette, name = "Treatment") +
-  xlab("Root Segment (cm) | Root tip to root base") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank())
+  theme(axis.title.x = element_blank())
 
 LCA_plot <- ggplot(plot(emmeans(LC_mod,~Treatment|Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
   ylab("Living Cortical Percent") +
