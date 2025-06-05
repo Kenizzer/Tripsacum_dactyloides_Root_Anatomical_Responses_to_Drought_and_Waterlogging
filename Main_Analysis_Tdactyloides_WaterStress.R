@@ -37,9 +37,8 @@ section_data$`Cortex Area` <- (section_data$`Root Area` - section_data$`Stele Ar
 section_data$`Living Cortical Area` <- section_data$`Cortex Area` - section_data$`Aerenchyma Area`
 
 # Calculate percentages (%)
-section_data$`Living Cortical Percent` <- ((section_data$`Cortex Area` - section_data$`Aerenchyma Area`) / section_data$`Root Area`) * 100
-section_data$`Aerenchyma Percent` <- (section_data$`Aerenchyma Area` / section_data$`Cortex Area`) * 100
-section_data$`Aerenchyma Percent Whole Root` <- (section_data$`Aerenchyma Area` / section_data$`Root Area`) * 100
+section_data$`Living Cortical Percent` <- (section_data$`Living Cortical Area` / section_data$`Root Area`) * 100
+section_data$`Aerenchyma Percent` <- (section_data$`Aerenchyma Area` / section_data$`Root Area`) * 100
 
 section_data$`Stele Percent` <- (section_data$`Stele Area` / section_data$`Root Area`) * 100
 section_data$`Metaxylem Percent` <- (section_data$`Metaxylem Vessel Area` / section_data$`Stele Area`) * 100
@@ -296,8 +295,8 @@ str(A_section_data)
 # Gong et al. 2019 used the aerenchyma as a percentage of the whole root, here I make a similar plot and summarise the stats.
 A_section_data %>%
   group_by(Treatment, Segment) %>%
-  select(`Aerenchyma Percent Whole Root`) %>%
-  summarise(mean = mean(`Aerenchyma Percent Whole Root`, na.rm = TRUE), sd = sd(`Aerenchyma Percent Whole Root`, na.rm = TRUE)) %>%
+  select(`Aerenchyma Percent`) %>%
+  summarise(mean = mean(`Aerenchyma Percent`, na.rm = TRUE), sd = sd(`Aerenchyma Percent`, na.rm = TRUE)) %>%
   ggplot(., aes(y = Segment, x = mean, fill = Treatment)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.8, color = "black") +
   scale_fill_manual(values = treatment_palette) +
@@ -305,8 +304,8 @@ A_section_data %>%
 
 stats <- A_section_data %>%
   group_by(Treatment, Segment) %>%
-  select(`Aerenchyma Percent Whole Root`) %>%
-  summarise(mean = mean(`Aerenchyma Percent Whole Root`, na.rm = TRUE), sd = sd(`Aerenchyma Percent Whole Root`, na.rm = TRUE))
+  select(`Aerenchyma Percent`) %>%
+  summarise(mean = mean(`Aerenchyma Percent`, na.rm = TRUE), sd = sd(`Aerenchyma Percent`, na.rm = TRUE))
 
 #### 5) Modeling and treatment to control plot ####
 # Models
@@ -519,28 +518,53 @@ ggsave("figures/Figure4_heatmap_bytreatment_plots.png", Segment_by_treatment, wi
 ggsave("figures/Figure4_heatmap_bytreatment_plots.svg", Segment_by_treatment, width = 16, height = 8, units = "in")
 
 #### 7) Emmeans Cortex Plot ####
-contrast(emmeans(CF_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+RH_plot_df <- plot(emmeans(RH_mod,~Treatment|Segment), plotit = FALSE) %>% select(Segment, Treatment, upper.CL)
+Root_hair_density_plot <- ggplot(plot(emmeans(RH_mod,~Treatment|Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
+  ylab("Root Hair Density") +
+  scale_y_continuous(limits = c(-7, 25), breaks = seq(-5, 25, by = 5)) +
+  geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment), size = 0.50,
+                  linewidth = 1.75, fill = "white", shape = 22, position = position_dodge(width = 0.75)) +
+  scale_color_manual(values = treatment_palette, name = "Treatment") +
+  theme(axis.title.x = element_blank()) +
+  annotate("text", x = 0.85, y = RH_plot_df %>% filter(Treatment == "Drought" & Segment == 1) %>% pull(upper.CL) * 1.1 , label = "*", color = treatment_palette["Drought"], size = 6) +
+  annotate("text", x = 1.85, y = RH_plot_df %>% filter(Treatment == "Drought" & Segment == 2) %>% pull(upper.CL) * 1.1 , label = "*", color = treatment_palette["Drought"], size = 6)
 
+CF_plot_df <- plot(emmeans(CF_mod,~Treatment|Segment), plotit = FALSE) %>% select(Segment, Treatment, upper.CL)
 Cortical_file_plot <- ggplot(plot(emmeans(CF_mod,~Treatment|Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
   ylab("Cortical Cell File Number") +
   scale_y_continuous(limits = c(10, 20), breaks = seq(10, 20, by = 2)) +
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment), size = 0.50,
                   linewidth = 1.75, fill = "white", shape = 22, position = position_dodge(width = 0.75)) +
   scale_color_manual(values = treatment_palette, name = "Treatment") +
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank()) +
+  annotate("text", x = 2.85, y = CF_plot_df %>% filter(Treatment == "Drought" & Segment == 3) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Drought"], size = 6) +
+  annotate("text", x = 4.85, y = CF_plot_df %>% filter(Treatment == "Drought" & Segment == 5) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Drought"], size = 6) +
+  annotate("text", x = 5.85, y = CF_plot_df %>% filter(Treatment == "Drought" & Segment == 6) %>% pull(upper.CL) * 1.1, label = "*", color = treatment_palette["Drought"], size = 6) +
+  annotate("text", x = 6.85, y = CF_plot_df %>% filter(Treatment == "Drought" & Segment == 7) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Drought"], size = 6) +
+  annotate("text", x = 6, y = CF_plot_df %>% filter(Treatment == "Waterlogged 24" & Segment == 6) %>% pull(upper.CL) * 1.1, label = "*", color = treatment_palette["Waterlogged 24"], size = 6) +
+  annotate("text", x = 3.3, y = CF_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 3) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Waterlogged 72"], size = 6) +
+  annotate("text", x = 5.3, y = CF_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 5) %>% pull(upper.CL) * 1.1, label = "*", color = treatment_palette["Waterlogged 72"], size = 6) +
+  annotate("text", x = 6.3, y = CF_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 6) %>% pull(upper.CL) * 1.1, label = "*", color = treatment_palette["Waterlogged 72"], size = 6) +
+  annotate("text", x = 7.3, y = CF_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 7) %>% pull(upper.CL) * 1.1, label = "*", color = treatment_palette["Waterlogged 72"], size = 6) +
+  annotate("text", x = 8.3, y = CF_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 8) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Waterlogged 72"], size = 6)
 
+LC_plot_df <- plot(emmeans(LC_mod,~Treatment|Segment), plotit = FALSE) %>% select(Segment, Treatment, upper.CL)
 LCA_plot <- ggplot(plot(emmeans(LC_mod,~Treatment|Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
   ylab("Living Cortical Percent") +
   scale_y_continuous(limits = c(50, 90), breaks = seq(50, 90, by = 10), labels = function(x) paste0(x, "%")) +
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment), size = 0.50,
                   linewidth = 1.75, fill = "white", shape = 22, position = position_dodge(width = 0.75)) +
   scale_color_manual(values = treatment_palette, name = "Treatment") +
-  xlab("Root Segment (cm) | Root tip to root base")
+  xlab("Root Segment (cm) | Root tip to root base") +
+  annotate("text", x = 5.3, y = LC_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 5) %>% pull(upper.CL) * 1.1, label = "*", color = treatment_palette["Waterlogged 72"], size = 6) +
+  annotate("text", x = 2.85, y = LC_plot_df %>% filter(Treatment == "Drought" & Segment == 3) %>% pull(upper.CL) * 1.1, label = "*", color = treatment_palette["Drought"], size = 6) 
 
-CO_LCA_plot <- ggarrange(Cortical_file_plot, LCA_plot, nrow = 2, common.legend = TRUE,
+RH_CN_LCA_plot <- ggarrange(Root_hair_density_plot, Cortical_file_plot, LCA_plot, nrow = 3, common.legend = TRUE,
                          legend = "right", labels = "AUTO", align = 'hv')
-ggsave("figures/Figure5_Cell_file_LCA_plot.svg", CO_LCA_plot, width = 170, height = 135, units = "mm")
-ggsave("figures/Figure5_Cell_file_LCA_plot.png", CO_LCA_plot, width = 170, height = 135, units = "mm")
+
+
+ggsave("figures/Figure5_RH_Cell_file_LCA_plot.svg", RH_CN_LCA_plot, width = 170, height = 200, units = "mm")
+ggsave("figures/Figure5_RH_Cell_file_LCA_plot.png", RH_CN_LCA_plot, width = 170, height = 200, units = "mm")
 
 #### 8) Emmeans Metaxylem Vessel Plot ####
 contrast(emmeans(SA_mod,~Treatment), "trt.vs.ctrl", ref = 1)

@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='UTF-8' ?>
-<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' width='481.89pt' height='269.29pt' viewBox='0 0 481.89 269.29'>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' width='481.89pt' height='269.29pt' viewBox='0 0 481.89 269.29'>
+<g class='svglite'>
 <defs>
   <style type='text/css'><![CDATA[
     .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
@@ -11,6 +12,10 @@
     }
     .svglite text {
       white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
     }
   ]]></style>
 </defs>
@@ -33,7 +38,7 @@
 </g>
 <defs>
   <clipPath id='cpMC4wMHwxMjguMjl8MC4wMHwyNjkuMjk='>
-    <rect x='0.00' y='0.000000000000057' width='128.29' height='269.29' />
+    <rect x='0.000000000000000000000000000000000000000000000000000' y='0.000000000000057' width='128.29' height='269.29' />
   </clipPath>
 </defs>
 <g clip-path='url(#cpMC4wMHwxMjguMjl8MC4wMHwyNjkuMjk=)'>
@@ -74,10 +79,10 @@
 <rect x='53.47' y='5.48' width='69.34' height='202.67' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw0ODEuODl8MC4wMHwyNjkuMjk=)'>
-<text x='48.54' y='210.19' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='24.48px' lengthAdjust='spacingAndGlyphs'>80000</text>
-<text x='48.54' y='158.53' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='29.38px' lengthAdjust='spacingAndGlyphs'>120000</text>
-<text x='48.54' y='106.86' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='29.38px' lengthAdjust='spacingAndGlyphs'>160000</text>
-<text x='48.54' y='55.20' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='29.38px' lengthAdjust='spacingAndGlyphs'>200000</text>
+<text x='48.54' y='210.19' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='24.45px' lengthAdjust='spacingAndGlyphs'>80000</text>
+<text x='48.54' y='158.53' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='29.34px' lengthAdjust='spacingAndGlyphs'>120000</text>
+<text x='48.54' y='106.86' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='29.34px' lengthAdjust='spacingAndGlyphs'>160000</text>
+<text x='48.54' y='55.20' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='29.34px' lengthAdjust='spacingAndGlyphs'>200000</text>
 <polyline points='50.73,207.04 53.47,207.04 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='50.73,155.38 53.47,155.38 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='50.73,103.71 53.47,103.71 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
@@ -87,11 +92,11 @@
 <polyline points='88.14,210.89 88.14,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='101.47,210.89 101.47,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='114.81,210.89 114.81,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<text transform='translate(65.93,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Control</text>
-<text transform='translate(79.26,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='31.31px' lengthAdjust='spacingAndGlyphs'>Drought</text>
-<text transform='translate(92.60,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 24</text>
-<text transform='translate(105.93,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 48</text>
-<text transform='translate(119.26,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 72</text>
+<text transform='translate(65.93,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='28.34px' lengthAdjust='spacingAndGlyphs'>Control</text>
+<text transform='translate(79.26,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='31.28px' lengthAdjust='spacingAndGlyphs'>Drought</text>
+<text transform='translate(92.60,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 24</text>
+<text transform='translate(105.93,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 48</text>
+<text transform='translate(119.26,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 72</text>
 <text transform='translate(13.36,106.81) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='87.73px' lengthAdjust='spacingAndGlyphs'>Stele Area (um^2)</text>
 <text x='5.05' y='15.03' style='font-size: 14.00px; font-weight: bold; font-family: "Arial";' textLength='10.11px' lengthAdjust='spacingAndGlyphs'>A</text>
 </g>
@@ -140,11 +145,11 @@
 <rect x='161.74' y='5.48' width='89.35' height='202.67' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw0ODEuODl8MC4wMHwyNjkuMjk=)'>
-<text x='156.81' y='183.76' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.90px' lengthAdjust='spacingAndGlyphs'>7</text>
-<text x='156.81' y='140.33' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.90px' lengthAdjust='spacingAndGlyphs'>8</text>
-<text x='156.81' y='96.91' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.90px' lengthAdjust='spacingAndGlyphs'>9</text>
-<text x='156.81' y='53.48' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.79px' lengthAdjust='spacingAndGlyphs'>10</text>
-<text x='156.81' y='10.06' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.14px' lengthAdjust='spacingAndGlyphs'>11</text>
+<text x='156.81' y='183.76' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>7</text>
+<text x='156.81' y='140.33' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>8</text>
+<text x='156.81' y='96.91' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>9</text>
+<text x='156.81' y='53.48' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.78px' lengthAdjust='spacingAndGlyphs'>10</text>
+<text x='156.81' y='10.06' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='9.12px' lengthAdjust='spacingAndGlyphs'>11</text>
 <polyline points='159.00,180.61 161.74,180.61 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='159.00,137.18 161.74,137.18 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='159.00,93.76 161.74,93.76 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
@@ -155,12 +160,12 @@
 <polyline points='206.42,210.89 206.42,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='223.60,210.89 223.60,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='240.79,210.89 240.79,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<text transform='translate(176.51,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Control</text>
-<text transform='translate(193.69,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='31.31px' lengthAdjust='spacingAndGlyphs'>Drought</text>
-<text transform='translate(210.88,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 24</text>
-<text transform='translate(228.06,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 48</text>
-<text transform='translate(245.24,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 72</text>
-<text transform='translate(141.64,106.81) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='121.09px' lengthAdjust='spacingAndGlyphs'>Metaxylem Vessel Count</text>
+<text transform='translate(176.51,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='28.34px' lengthAdjust='spacingAndGlyphs'>Control</text>
+<text transform='translate(193.69,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='31.28px' lengthAdjust='spacingAndGlyphs'>Drought</text>
+<text transform='translate(210.88,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 24</text>
+<text transform='translate(228.06,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 48</text>
+<text transform='translate(245.24,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 72</text>
+<text transform='translate(141.64,106.81) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='121.11px' lengthAdjust='spacingAndGlyphs'>Metaxylem Vessel Count</text>
 <text x='133.34' y='15.03' style='font-size: 14.00px; font-weight: bold; font-family: "Arial";' textLength='10.11px' lengthAdjust='spacingAndGlyphs'>B</text>
 </g>
 <defs>
@@ -204,9 +209,9 @@
 <rect x='300.04' y='5.48' width='79.35' height='202.67' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw0ODEuODl8MC4wMHwyNjkuMjk=)'>
-<text x='295.11' y='203.65' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1000</text>
-<text x='295.11' y='132.56' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>1500</text>
-<text x='295.11' y='61.47' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='19.58px' lengthAdjust='spacingAndGlyphs'>2000</text>
+<text x='295.11' y='203.65' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='19.56px' lengthAdjust='spacingAndGlyphs'>1000</text>
+<text x='295.11' y='132.56' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='19.56px' lengthAdjust='spacingAndGlyphs'>1500</text>
+<text x='295.11' y='61.47' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='19.56px' lengthAdjust='spacingAndGlyphs'>2000</text>
 <polyline points='297.30,200.50 300.04,200.50 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='297.30,129.41 300.04,129.41 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='297.30,58.32 300.04,58.32 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
@@ -215,15 +220,15 @@
 <polyline points='339.71,210.89 339.71,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='354.97,210.89 354.97,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
 <polyline points='370.23,210.89 370.23,208.15 ' style='stroke-width: 1.07; stroke: #333333; stroke-linecap: butt;' />
-<text transform='translate(313.65,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Control</text>
-<text transform='translate(328.91,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='31.31px' lengthAdjust='spacingAndGlyphs'>Drought</text>
-<text transform='translate(344.17,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 24</text>
-<text transform='translate(359.43,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 48</text>
-<text transform='translate(374.69,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 72</text>
+<text transform='translate(313.65,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='28.34px' lengthAdjust='spacingAndGlyphs'>Control</text>
+<text transform='translate(328.91,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='31.28px' lengthAdjust='spacingAndGlyphs'>Drought</text>
+<text transform='translate(344.17,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 24</text>
+<text transform='translate(359.43,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 48</text>
+<text transform='translate(374.69,217.53) rotate(-45)' text-anchor='end' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 72</text>
 <text transform='translate(269.93,106.81) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='181.91px' lengthAdjust='spacingAndGlyphs'>Metaxylem Vessel Mean Area (um^2)</text>
 <text x='261.63' y='15.03' style='font-size: 14.00px; font-weight: bold; font-family: "Arial";' textLength='10.11px' lengthAdjust='spacingAndGlyphs'>C</text>
 <rect x='384.87' y='78.07' width='97.02' height='113.16' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<text x='390.34' y='92.64' style='font-size: 11.00px; font-family: "Arial";' textLength='49.74px' lengthAdjust='spacingAndGlyphs'>Treatment</text>
+<text x='390.34' y='92.64' style='font-size: 11.00px; font-family: "Arial";' textLength='49.75px' lengthAdjust='spacingAndGlyphs'>Treatment</text>
 <rect x='390.34' y='99.34' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 <line x1='398.98' y1='114.90' x2='398.98' y2='101.07' style='stroke-width: 3.73; stroke: #5CB270; stroke-linecap: butt;' />
 <rect x='395.52' y='104.52' width='6.93' height='6.93' style='stroke-width: 1.42; stroke: #5CB270; fill: #FFFFFF;' />
@@ -239,10 +244,11 @@
 <rect x='390.34' y='168.46' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 <line x1='398.98' y1='184.02' x2='398.98' y2='170.19' style='stroke-width: 3.73; stroke: #0096A4; stroke-linecap: butt;' />
 <rect x='395.52' y='173.64' width='6.93' height='6.93' style='stroke-width: 1.42; stroke: #0096A4; fill: #FFFFFF;' />
-<text x='413.10' y='111.13' style='font-size: 8.80px; font-family: "Arial";' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Control</text>
-<text x='413.10' y='128.41' style='font-size: 8.80px; font-family: "Arial";' textLength='31.31px' lengthAdjust='spacingAndGlyphs'>Drought</text>
-<text x='413.10' y='145.69' style='font-size: 8.80px; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 24</text>
-<text x='413.10' y='162.97' style='font-size: 8.80px; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 48</text>
-<text x='413.10' y='180.25' style='font-size: 8.80px; font-family: "Arial";' textLength='61.82px' lengthAdjust='spacingAndGlyphs'>Waterlogged 72</text>
+<text x='413.10' y='111.13' style='font-size: 8.80px; font-family: "Arial";' textLength='28.34px' lengthAdjust='spacingAndGlyphs'>Control</text>
+<text x='413.10' y='128.41' style='font-size: 8.80px; font-family: "Arial";' textLength='31.28px' lengthAdjust='spacingAndGlyphs'>Drought</text>
+<text x='413.10' y='145.69' style='font-size: 8.80px; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 24</text>
+<text x='413.10' y='162.97' style='font-size: 8.80px; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 48</text>
+<text x='413.10' y='180.25' style='font-size: 8.80px; font-family: "Arial";' textLength='61.73px' lengthAdjust='spacingAndGlyphs'>Waterlogged 72</text>
+</g>
 </g>
 </svg>
