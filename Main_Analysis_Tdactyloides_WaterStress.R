@@ -160,14 +160,8 @@ PVE_df <- rbind(pve_by_t("Root Area"),
 PVE_df <- PVE_df %>%
   mutate(Group = if_else(
     Trait == "Metaxylem Vessel Number" & Group == "Among Replicates",
-    "Among Segments within Plants",
-    Group
+    "Among Segments within Plants", Group
   ))
-
-# set factor levels for plotting
-PVE_df$Group <- factor(PVE_df$Group, levels = c("Among Replicates",
-                                                "Among Segments within Plants",
-                                                "Among Plants"))
 
 # Get mean PVE across traits by treatment
 mean_pve_df <- PVE_df %>%
@@ -593,11 +587,6 @@ c <- ggplot(plot(emmeans(MV_mod,~Treatment), plotit = FALSE), aes(x = Treatment,
   scale_color_manual(values = treatment_palette, name = "Treatment") + 
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank())
 
-
-A_section_data$`Metaxylem Vessel Area`
-
-A_section_data$`Metaxylem Vessel Mean Area`
-
 Metaxylem_plot <- ggarrange(a,b,c, nrow = 1, common.legend = TRUE, legend = 'right', labels = "AUTO")
 ggsave("figures/Figure6_metaxylem_plot.svg", Metaxylem_plot, width = 170, height = 95, units = "mm")
 ggsave("figures/Figure6_metaxylem_plot.png", Metaxylem_plot, width = 170, height = 95, units = "mm")
@@ -615,6 +604,7 @@ str(Only_F72_D)
 anova(lmer(`Stele:Root Ratio` ~ Treatment*Segment + (1|Plant_id), data = Only_F72_D))
 mod <- lmer(`Stele:Root Ratio` ~ Treatment*Segment + (1|Plant_id), data = Only_F72_D)
 contrast(emmeans(mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+contrast(emmeans(mod,~Segment), "trt.vs.ctrl", ref = 1)
 pairs(emmeans(mod,~Treatment|Segment))
 
 SR_ratio_plot <- ggplot(plot(emmeans(mod,~Treatment*Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
@@ -627,4 +617,3 @@ SR_ratio_plot <- ggplot(plot(emmeans(mod,~Treatment*Segment), plotit = FALSE), a
 
 ggsave("figures/Figure7_Stele-Root_Ratio_plot.svg", SR_ratio_plot, width = 170, height = 60, unit = "mm")
 ggsave("figures/Figure7_Stele-Root_Ratio_plot.png", SR_ratio_plot, width = 170, height = 60, unit = "mm")
-
