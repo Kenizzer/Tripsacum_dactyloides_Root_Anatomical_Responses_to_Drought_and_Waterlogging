@@ -40,26 +40,28 @@ section_data$`Living Cortical Area` <- section_data$`Cortex Area` - section_data
 section_data$`Living Cortical Percent` <- (section_data$`Living Cortical Area` / section_data$`Root Area`) * 100
 section_data$`Aerenchyma Percent` <- (section_data$`Aerenchyma Area` / section_data$`Root Area`) * 100
 
-section_data$`Stele Percent` <- (section_data$`Stele Area` / section_data$`Root Area`) * 100
-section_data$`Metaxylem Percent` <- (section_data$`Metaxylem Vessel Area` / section_data$`Stele Area`) * 100
-
 # Ratios (X:Y)
-section_data$`Stele:Cortex Ratio` <- section_data$`Stele Area` / section_data$`Cortex Area`
 section_data$`Stele:Root Ratio` <- section_data$`Stele Area` / section_data$`Root Area`
+section_data$`Metaxylem:Stele Ratio` <- section_data$`Metaxylem Vessel Area` /section_data$`Stele Area`
 
 # Scale root hair number by perimeter measurement 
-section_data$`Root Hair Number` <- section_data$`Root Hair Number` / (section_data$`Root Perimeter`/1000) # Root hairs per mm of root perimeter
+section_data$`Root Hair Density` <- section_data$`Root Hair Number` / (section_data$`Root Perimeter`/1000) # Root hairs per mm of root perimeter
+
+# Root Diameter
+section_data$Root_diameter <- (sqrt(section_data$`Root Area` / pi) * 2)
+section_data$Stele_diameter <- (sqrt(section_data$`Stele Area` / pi) * 2)
+
+# Cortical Cell file size normalized by cortex depth
+section_data$`CCFN-Normalized` <- section_data$`Cortical Cell File Number` / ((section_data$Root_diameter - section_data$Stele_diameter) / 2)
 
 # Sanity check
 str(section_data)
 
-### Diameter range of roots ###
-section_data$root_diameter <- (sqrt(section_data$`Root Area` / pi) * 2)
-
+#### 2) Diameter range of roots ####
 diameter_df <- section_data %>%
-  select(root_diameter, Plant_id, Treatment) %>%
+  select(Root_diameter, Plant_id, Treatment) %>%
   group_by(Plant_id, Treatment) %>%
-  summarize(mean_diameter_mm = (mean(root_diameter, na.rm = TRUE)/1000),
+  summarize(mean_diameter_mm = (mean(Root_diameter, na.rm = TRUE)/1000),
             count = n())
 
 ggplot(diameter_df, aes(x = Treatment, y = mean_diameter_mm, fill = Treatment)) +
@@ -72,16 +74,19 @@ ggplot(diameter_df, aes(x = Treatment, y = mean_diameter_mm, fill = Treatment)) 
         axis.ticks.x = element_blank())
 
 x <- section_data %>%
-  select(root_diameter, Plant_id, Treatment) %>%
+  select(Root_diameter, Plant_id, Treatment) %>%
   group_by(Plant_id) %>%
-  summarize(mean_diameter_mm = (mean(root_diameter, na.rm = TRUE)/1000),
+  summarize(mean_diameter_mm = (mean(Root_diameter, na.rm = TRUE)/1000),
             count = n())
 
 # mean and standard error
 summary(x$mean_diameter_mm)
 sd(x$mean_diameter_mm) / sqrt(length(x$mean_diameter_mm))
 
-#### 2) Check the variance between sections of the same segment of root ####
+#Clean Env
+rm(diameter_df, x)
+
+#### 3) Check the variance between sections of the same segment of root ####
 # Select all plants that have three sections per segment (i.e, have a replicate A, B, and C)
 section_data_index <- section_data %>% filter(Replicate %in% c("B", "C"))
 section_data_replicated <- section_data %>% filter(Plant_id %in% unique(section_data_index$Plant_id))
@@ -143,15 +148,13 @@ pve_by_t <- function(trait, treatment_var = "Treatment") {
 # (1|Residual) = Among Replicates [A,B,C]
 PVE_df <- rbind(pve_by_t("Root Area"),
                 pve_by_t("Epidermis Depth"),
-                pve_by_t("Root Hair Number"),
-                pve_by_t("Cortex Area"),
+                pve_by_t("Root Hair Density"),
                 pve_by_t("Cortical Cell File Number"),
+                pve_by_t("CCFN-Normalized"),
                 pve_by_t("Living Cortical Percent"),
                 pve_by_t("Aerenchyma Percent"),
-                pve_by_t("Stele Area"),
-                pve_by_t("Stele:Cortex Ratio"),
                 pve_by_t("Stele:Root Ratio"),
-                pve_by_t("Metaxylem Vessel Area"),
+                pve_by_t("Metaxylem:Stele Ratio"),
                 pve_by_t("Metaxylem Vessel Number"),
                 pve_by_t("Metaxylem Vessel Mean Area"))
 
@@ -170,15 +173,18 @@ mean_pve_df <- PVE_df %>%
   mutate(Trait = "Mean PVE", name = "Percent_Variance_Explained")
 PVE_df <- bind_rows(PVE_df, mean_pve_df)
 
+PVE_df$Group <- factor(PVE_df$Group, levels = c("Among Replicates", "Among Segments within Plants", "Among Plants"))
+
 # Factor level for plot right to left. Rename root hair number.
-PVE_df$Trait <- factor(PVE_df$Trait, levels = rev(c("Mean PVE","Root Area", "Epidermis Depth", "Root Hair Number",
-                                                    "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
-                                                    "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
-                                                    "Metaxylem Vessel Mean Area", "Metaxylem Vessel Area", "Metaxylem Vessel Number")))
-levels(PVE_df$Trait)[levels(PVE_df$Trait) == "Root Hair Number"] <- "Root Hair Density"
+PVE_df$Trait <- factor(PVE_df$Trait, levels = c("Root Area", "Epidermis Depth",
+                                                "Root Hair Density", "Cortical Cell File Number", "CCFN-Normalized",
+                                                "Living Cortical Percent", "Aerenchyma Percent", "Stele:Root Ratio",
+                                                "Metaxylem:Stele Ratio", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area",
+                                                "Mean PVE"))
+
 # PLOTTING 
 Barplot_PVE <- ggplot(PVE_df, aes(x = Trait, y = PVE, fill = Group)) +
-  annotate("rect",xmin = 13.5, xmax = 14.5, ymin = -Inf, ymax = Inf, fill = "firebrick", alpha = 0.8) +
+  annotate("rect",xmin = 11.5, xmax = 12.5, ymin = -Inf, ymax = Inf, fill = "firebrick", alpha = 0.8) +
   geom_bar(stat = "identity", position = "stack", color = "black", size = 0.1) +
   facet_wrap(~ Treatment, ncol = 1) +
   labs(y = "Percent Variance Explained", fill = "Group") +
@@ -208,10 +214,6 @@ section_data_replicated %>%
 section_data_replicated %>%
   distinct(Plant_id, Segment, Treatment, Replicate) %>%
   count(Treatment, name = "N_treatment") # Number of replicates by treatment
-
-# Stats, dunnett comparing rep to plants/segments
-lm_by_traits <- lm(PVE ~ Group*Trait, data = PVE_df %>% filter(Trait != "Mean PVE"))
-contrast(emmeans(lm_by_traits,~Group|Trait), "trt.vs.ctrl", ref = 1)
 
 PVE_df %>%
   filter(Trait == "Mean PVE") %>%
@@ -248,8 +250,10 @@ section_data_replicated %>%
   ) %>%
   arrange(desc(CV))
 
+#Clean env
+rm(Barplot_PVE, PVE_df, mean_pve_df, lm_by_traits, pve_by_t)
 
-#### 3) Analysis with A sections, expanded sampling ####
+#### 4) Analysis with A sections, expanded sampling ####
 # We use only single section from each of the samples that had 3 sections (labeled A,B,C) imaged to avoid
 # including technical replicates into the main analysis.
 ## Select only A sections
@@ -262,7 +266,7 @@ A_section_data <- A_section_data %>%
   group_by(Plant_id) %>%
   mutate(Segment = rev(Segment))
 
-#### 4) Root length plot ####
+#### 5) Root length plot ####
 # Root lengths by treatment
 Root_length_count <- A_section_data %>%
   group_by(Treatment) %>%
@@ -285,7 +289,11 @@ ggsave("figures/FigureS1_Root_length_count.png", Root_length_count_plot, width =
 # Sanity check
 str(A_section_data)
 
-#### 4.1) Root aerenchmya plot, in relation to whole root to compare to Gong et. al 2019 ####
+#Clean env
+rm(Root_length_count, Root_length_count_plot)
+
+
+#### 5.1) Root aerenchmya plot, in relation to whole root to compare to Gong et. al 2019 ####
 # Gong et al. 2019 used the aerenchyma as a percentage of the whole root, here I make a similar plot and summarise the stats.
 A_section_data %>%
   group_by(Treatment, Segment) %>%
@@ -301,66 +309,59 @@ stats <- A_section_data %>%
   select(`Aerenchyma Percent`) %>%
   summarise(mean = mean(`Aerenchyma Percent`, na.rm = TRUE), sd = sd(`Aerenchyma Percent`, na.rm = TRUE))
 
-#### 5) Modeling and treatment to control plot ####
+#### 6) Modeling and treatment to control plot ####
 # Models
 RA_mod <- lmer(`Root Area` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
 EP_mod <- lmer(`Epidermis Depth` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
-RH_mod <- lmer(`Root Hair Number` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
-CA_mod <- lmer(`Cortex Area` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
+RH_mod <- lmer(`Root Hair Density` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
 CF_mod <- lmer(`Cortical Cell File Number` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
+CN_mod <- lmer(`CCFN-Normalized` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
 LC_mod <- lmer(`Living Cortical Percent` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
 AR_mod <- lmer(`Aerenchyma Percent` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
-SA_mod <- lmer(`Stele Area` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
-SC_mod <- lmer(`Stele:Cortex Ratio` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
 SR_mod <- lmer(`Stele:Root Ratio` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
-MA_mod <- lmer(`Metaxylem Vessel Area` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
+MS_mod <- lmer(`Metaxylem:Stele Ratio` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
 MN_mod <- lmer(`Metaxylem Vessel Number` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
-MV_mod <- lmer(`Metaxylem Vessel Mean Area` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
+MA_mod <- lmer(`Metaxylem Vessel Mean Area` ~ Treatment*Segment + (1|Plant_id), data = A_section_data)
 
 # Anovas
 anova(RA_mod)
 anova(EP_mod)
 anova(RH_mod)
-anova(CA_mod)
 anova(CF_mod)
+anova(CN_mod)
 anova(LC_mod)
 anova(AR_mod)
-anova(SA_mod)
-anova(SC_mod)
 anova(SR_mod)
-anova(MA_mod)
+anova(MS_mod)
 anova(MN_mod)
-anova(MV_mod)
+anova(MA_mod)
 
 # Contrasts T*S
 contrast(emmeans(RA_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(EP_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(RH_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
-contrast(emmeans(CA_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(CF_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+contrast(emmeans(CN_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(LC_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(AR_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
-contrast(emmeans(SA_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
-contrast(emmeans(SC_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(SR_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
-contrast(emmeans(MA_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+contrast(emmeans(MS_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 contrast(emmeans(MN_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
-contrast(emmeans(MV_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+contrast(emmeans(MA_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
 
 # Histograms of residuals
 hist(resid(RA_mod))
 hist(resid(EP_mod))
 hist(resid(RH_mod))
-hist(resid(CA_mod))
 hist(resid(CF_mod))
+hist(resid(CN_mod))
 hist(resid(LC_mod))
 hist(resid(AR_mod))
-hist(resid(SA_mod))
-hist(resid(SC_mod))
 hist(resid(SR_mod))
-hist(resid(MA_mod))
+hist(resid(MS_mod))
 hist(resid(MN_mod))
-hist(resid(MV_mod))
+hist(resid(MA_mod))
+
 # Residuals look mostly fine in the histograms, often have long tails.
 
 # Posthoc dunnet tests
@@ -370,20 +371,6 @@ Dunn_emmeans <- function(mod){
   con <- contrast(mod.emm, "trt.vs.ctrl", ref = 1)
   return(con)
 }
-
-plot(Dunn_emmeans(RA_mod))
-plot(Dunn_emmeans(EP_mod))
-plot(Dunn_emmeans(RH_mod))
-plot(Dunn_emmeans(CA_mod))
-plot(Dunn_emmeans(CF_mod))
-plot(Dunn_emmeans(LC_mod))
-plot(Dunn_emmeans(AR_mod))
-plot(Dunn_emmeans(SA_mod))
-plot(Dunn_emmeans(SC_mod))
-plot(Dunn_emmeans(SR_mod))
-plot(Dunn_emmeans(MA_mod))
-plot(Dunn_emmeans(MN_mod))
-plot(Dunn_emmeans(MV_mod))
 
 # Dunnett Figure df function
 Dunn_emmeans_DF <- function(mod){
@@ -404,29 +391,27 @@ Dunn_emmeans_DF <- function(mod){
 
 RA_df <- data.frame(Dunn_emmeans_DF(RA_mod), "Trait" = replicate(32, "Root Area"))
 EP_df <- data.frame(Dunn_emmeans_DF(EP_mod), "Trait" = replicate(32, "Epidermis Depth"))
-RH_df <- data.frame(Dunn_emmeans_DF(RH_mod), "Trait" = replicate(32, "Root Hair Number"))
-CA_df <- data.frame(Dunn_emmeans_DF(CA_mod), "Trait" = replicate(32, "Cortex Area"))
+RH_df <- data.frame(Dunn_emmeans_DF(RH_mod), "Trait" = replicate(32, "Root Hair Density"))
 CF_df <- data.frame(Dunn_emmeans_DF(CF_mod), "Trait" = replicate(32, "Cortical Cell File Number"))
+CN_df <- data.frame(Dunn_emmeans_DF(CN_mod), "Trait" = replicate(32, "CCFN-Normalized"))
 LC_df <- data.frame(Dunn_emmeans_DF(LC_mod), "Trait" = replicate(32, "Living Cortical Percent"))
 AR_df <- data.frame(Dunn_emmeans_DF(AR_mod), "Trait" = replicate(32, "Aerenchyma Percent"))
-SA_df <- data.frame(Dunn_emmeans_DF(SA_mod), "Trait" = replicate(32, "Stele Area"))
-SC_df <- data.frame(Dunn_emmeans_DF(SC_mod), "Trait" = replicate(32, "Stele:Cortex Ratio"))
 SR_df <- data.frame(Dunn_emmeans_DF(SR_mod), "Trait" = replicate(32, "Stele:Root Ratio"))
-MA_df <- data.frame(Dunn_emmeans_DF(MA_mod), "Trait" = replicate(32, "Metaxylem Vessel Area"))
+MS_df <- data.frame(Dunn_emmeans_DF(MS_mod), "Trait" = replicate(32, "Metaxylem:Stele Ratio"))
 MN_df <- data.frame(Dunn_emmeans_DF(MN_mod), "Trait" = replicate(32, "Metaxylem Vessel Number"))
-MV_df <- data.frame(Dunn_emmeans_DF(MV_mod), "Trait" = replicate(32, "Metaxylem Vessel Mean Area"))
+MA_df <- data.frame(Dunn_emmeans_DF(MA_mod), "Trait" = replicate(32, "Metaxylem Vessel Mean Area"))
 
 # Create long dataframe
-full_df <- rbind(RA_df, EP_df, RH_df, CA_df,
-                 CF_df, LC_df, AR_df, SA_df, 
-                 SC_df, SR_df, MA_df, MN_df,
-                 MV_df)
+full_df <- rbind(RA_df, EP_df, RH_df, CF_df, CN_df, 
+                 LC_df, AR_df, SR_df, MS_df, MN_df,
+                 MA_df)
 
 # Rearrange trait factor order
-full_df$Trait <- factor(full_df$Trait, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Number",
-                                                      "Cortex Area", "Cortical Cell File Number", "Living Cortical Percent", "Aerenchyma Percent",
-                                                      "Stele Area", "Stele:Cortex Ratio", "Stele:Root Ratio",
-                                                      "Metaxylem Vessel Area", "Metaxylem Vessel Number", "Metaxylem Vessel Mean Area")))
+full_df$Trait <- factor(full_df$Trait, levels = rev(c("Root Area", "Epidermis Depth", "Root Hair Density",
+                                                      "Cortical Cell File Number", "CCFN-Normalized",
+                                                      "Living Cortical Percent", "Aerenchyma Percent", "Stele:Root Ratio",
+                                                      "Metaxylem:Stele Ratio", "Metaxylem Vessel Number",
+                                                      "Metaxylem Vessel Mean Area")))
 
 # Create dataframes for plotting by treatment
 Drought_DF <- full_df %>%
@@ -474,7 +459,7 @@ a <- ggplot(Drought_DF, aes(x = Segment , y = Trait, fill = `Relative Change`)) 
   coord_fixed() +
   geom_text(aes(label = `Significance`), color = "black", size = 8) +
   xlab("Root Segment (cm)") +
-  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
+  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-40,40)) +
   theme(axis.title.y = element_blank()) +
   labs(title = "Drought")
 
@@ -483,7 +468,7 @@ b <- ggplot(Flood24_DF, aes(x = Segment , y = Trait, fill = `Relative Change`)) 
   coord_fixed() +
   geom_text(aes(label = `Significance`), color = "black", size = 8) +
   xlab("Root Segment (cm)") +
-  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
+  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-40,40)) +
   theme(axis.text.y = element_blank(), axis.title.y = element_blank()) +
   labs(title = "Flood 24")
 
@@ -493,7 +478,7 @@ c <- ggplot(Flood48_DF, aes(x = Segment , y = Trait, fill = `Relative Change`)) 
   geom_text(aes(label = `Significance`), color = "black", size = 8) +
   xlab("Root Segment (cm)") +
 
-  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-45,40)) +
+  scale_fill_gradient2(low='dodgerblue1', high='firebrick1', mid='white', name="Relative Change from Control (%)", limits = c(-40,40)) +
   theme(axis.text.y = element_blank(), axis.title.y = element_blank()) +
   labs(title = "Flood 48")
 
@@ -514,7 +499,7 @@ ggsave("figures/Figure4_heatmap_bytreatment_plots.svg", Segment_by_treatment, wi
 #### 7) Emmeans Cortex Plot ####
 RH_plot_df <- plot(emmeans(RH_mod,~Treatment|Segment), plotit = FALSE) %>% select(Segment, Treatment, upper.CL)
 Root_hair_density_plot <- ggplot(plot(emmeans(RH_mod,~Treatment|Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
-  ylab("Root Hair Density") +
+  ylab("Root Hair Density (Hairs/mm)") +
   scale_y_continuous(limits = c(-7, 25), breaks = seq(-5, 25, by = 5)) +
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment), size = 0.50,
                   linewidth = 1.75, fill = "white", shape = 22, position = position_dodge(width = 0.75)) +
@@ -561,36 +546,49 @@ ggsave("figures/Figure5_RH_Cell_file_LCA_plot.svg", RH_CN_LCA_plot, width = 170,
 ggsave("figures/Figure5_RH_Cell_file_LCA_plot.png", RH_CN_LCA_plot, width = 170, height = 200, units = "mm")
 
 #### 8) Emmeans Metaxylem Vessel Plot ####
-contrast(emmeans(SA_mod,~Treatment), "trt.vs.ctrl", ref = 1)
+contrast(emmeans(MS_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+contrast(emmeans(MN_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+contrast(emmeans(MA_mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+
 contrast(emmeans(MN_mod,~Treatment), "trt.vs.ctrl", ref = 1)
-contrast(emmeans(MV_mod,~Treatment), "trt.vs.ctrl", ref = 1)
+contrast(emmeans(MA_mod,~Treatment), "trt.vs.ctrl", ref = 1)
 
-a <- ggplot(plot(emmeans(SA_mod,~Treatment), plotit = FALSE), aes(x = Treatment, y = the.emmean, color = Treatment)) +
-  ylab("Stele Area (um^2)") +
-  geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment),
-                  size = 0.75, linewidth = 1.75, fill = "white", shape = 22) +
-  scale_color_manual(values = treatment_palette, name = "Treatment") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank())
-
-b <- ggplot(plot(emmeans(MN_mod,~Treatment), plotit = FALSE), aes(x = Treatment, y = the.emmean, color = Treatment)) +
-  ylab("Metaxylem Vessel Count") +
-  geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment),
+MS_plot_df <- plot(emmeans(MS_mod,~Treatment|Segment), plotit = FALSE) %>% select(Segment, Treatment, upper.CL)
+a <- ggplot(plot(emmeans(MS_mod,~Treatment*Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
+  ylab("Metaxylem:Stele Ratio") +
+  geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, color = Treatment),
                   size = 0.75, linewidth = 1.75, fill = "white", shape = 22,
-                  position = position_dodge(width = 0.5)) +
+                  position = position_dodge(width = 0.80)) +
   scale_color_manual(values = treatment_palette, name = "Treatment") +
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank())
+  theme(axis.title.x = element_blank()) +
+  annotate("text", x = 2.3, y = MS_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 2) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Waterlogged 72"], size = 6) +
+  annotate("text", x = 3.3, y = MS_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 3) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Waterlogged 72"], size = 6) +
+  annotate("text", x = 4.3, y = MS_plot_df %>% filter(Treatment == "Waterlogged 72" & Segment == 4) %>% pull(upper.CL) * 1.1, label = "*", color = treatment_palette["Waterlogged 72"], size = 6) +
+  annotate("text", x = 3, y = MS_plot_df %>% filter(Treatment == "Waterlogged 24" & Segment == 3) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Waterlogged 24"], size = 6) +
+  annotate("text", x = 4, y = MS_plot_df %>% filter(Treatment == "Waterlogged 24" & Segment == 4) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Waterlogged 24"], size = 6) +
+  annotate("text", x = 5, y = MS_plot_df %>% filter(Treatment == "Waterlogged 24" & Segment == 5) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Waterlogged 24"], size = 6) +
+  annotate("text", x = 6, y = MS_plot_df %>% filter(Treatment == "Waterlogged 24" & Segment == 6) %>% pull(upper.CL) * 1.1, label = "-", color = treatment_palette["Waterlogged 24"], size = 6) 
 
-c <- ggplot(plot(emmeans(MV_mod,~Treatment), plotit = FALSE), aes(x = Treatment, y = the.emmean, color = Treatment)) +
-  ylab("Metaxylem Vessel Mean Area (um^2)") +
-  geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment),
-                  size = 0.75, linewidth = 1.75, fill = "white", shape = 22) +
-  scale_color_manual(values = treatment_palette, name = "Treatment") + 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), axis.title.x = element_blank())
+b <- ggplot(plot(emmeans(MN_mod,~Treatment*Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
+  ylab("Metaxylem Vessel Number") +
+  geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, color = Treatment),
+                  size = 0.75, linewidth = 1.75, fill = "white", shape = 22,
+                  position = position_dodge(width = 0.80)) +
+  scale_color_manual(values = treatment_palette, name = "Treatment") +
+  theme(axis.title.x = element_blank())
 
-Metaxylem_plot <- ggarrange(a,b,c, nrow = 1, common.legend = TRUE, legend = 'right', labels = "AUTO")
-ggsave("figures/Figure6_metaxylem_plot.svg", Metaxylem_plot, width = 170, height = 95, units = "mm")
-ggsave("figures/Figure6_metaxylem_plot.png", Metaxylem_plot, width = 170, height = 95, units = "mm")
+c <- ggplot(plot(emmeans(MA_mod,~Treatment*Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
+  ylab(expression(atop("Metaxylem Vessel", "Mean Area (" * mu * m^2 * ")"))) +
+  geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, color = Treatment),
+                  size = 0.75, linewidth = 1.75, fill = "white", shape = 22,
+                  position = position_dodge(width = 0.80)) +
+  scale_color_manual(values = treatment_palette, name = "Treatment") +
+  xlab("Root Segment (cm) | Root tip to root base")
+  
 
+Metaxylem_plot <- ggarrange(a,b,c, ncol = 1, common.legend = TRUE, legend = 'right', labels = "AUTO", align = 'v')
+ggsave("figures/Figure6_metaxylem_plot.svg", Metaxylem_plot, width = 200, height = 200, units = "mm")
+ggsave("figures/Figure6_metaxylem_plot.png", Metaxylem_plot, width = 200, height = 200, units = "mm")
 
 #### 9) Drought vs Flood 72 Comparison | S:R Ratio plot####
 # filter to select stress classes
@@ -603,9 +601,11 @@ str(Only_F72_D)
 # STATS
 anova(lmer(`Stele:Root Ratio` ~ Treatment*Segment + (1|Plant_id), data = Only_F72_D))
 mod <- lmer(`Stele:Root Ratio` ~ Treatment*Segment + (1|Plant_id), data = Only_F72_D)
-contrast(emmeans(mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
-contrast(emmeans(mod,~Segment), "trt.vs.ctrl", ref = 1)
-pairs(emmeans(mod,~Treatment|Segment))
+posthoc <- contrast(emmeans(mod,~Treatment|Segment), "trt.vs.ctrl", ref = 1)
+summary(posthoc)
+
+em <- emmeans(mod, ~Treatment|Segment)
+eff_size(em, method = "trt.vs.ctrl", ref = 1, sigma = sigma(mod), edf = df.residual(mod))
 
 SR_ratio_plot <- ggplot(plot(emmeans(mod,~Treatment*Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
   ylab("Stele:Root ratio") +
@@ -617,3 +617,18 @@ SR_ratio_plot <- ggplot(plot(emmeans(mod,~Treatment*Segment), plotit = FALSE), a
 
 ggsave("figures/Figure7_Stele-Root_Ratio_plot.svg", SR_ratio_plot, width = 170, height = 60, unit = "mm")
 ggsave("figures/Figure7_Stele-Root_Ratio_plot.png", SR_ratio_plot, width = 170, height = 60, unit = "mm")
+
+
+#### 10) Supplement CCFN normalized ####
+CN_mod
+
+CN_plot_df <- plot(emmeans(CN_mod,~Treatment|Segment), plotit = FALSE) %>% select(Segment, Treatment, upper.CL)
+CN_plot <- ggplot(plot(emmeans(CN_mod,~Treatment|Segment), plotit = FALSE), aes(x = Segment, y = the.emmean, color = Treatment)) +
+  ylab(expression("CCFN-Normalized (" * Cell~Files~mu*m^{-1} * ")")) +
+  geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL, fill = Treatment), size = 0.50,
+                  linewidth = 1.75, fill = "white", shape = 22, position = position_dodge(width = 0.75)) +
+  scale_color_manual(values = treatment_palette, name = "Treatment") +
+  xlab("Root Segment (cm) | Root tip to root base")
+
+ggsave("figures/FigureS4_CCFN-normalized.svg", CN_plot, width = 170, height = 90, unit = "mm")
+ggsave("figures/FigureS4_CCFN-normalized.png", CN_plot, width = 170, height = 90, unit = "mm")
