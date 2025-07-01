@@ -113,8 +113,8 @@ final_height_plot <- ggplot(Trip_df_full, aes(x = treatment, y = final_height_mm
 # arrange
 both_plots <- ggarrange(weight_plot, final_height_plot, common.legend = TRUE, legend = 'right')
 # Save
-ggsave("../figures/Figure1_Shoot_height_and_weight_treatment.svg", both_plots, height = 85, width = 170, units = "mm")
-ggsave("../figures/Figure1_Shoot_height_and_weight_treatment.png", both_plots, height = 85, width = 170, units = "mm")
+ggsave("../figures/Figure2_Shoot_height_and_weight_treatment.svg", both_plots, height = 85, width = 170, units = "mm")
+ggsave("../figures/Figure2_Shoot_height_and_weight_treatment.png", both_plots, height = 85, width = 170, units = "mm")
 
 # Stats
 summarySE(Trip_df_full, measurevar = "shoot_dry_weight_mg")
